@@ -35,11 +35,9 @@ def partition_db(in_db: sqlite3.Connection, output_db_count: int):
     # calculate number of tree rows for each stand
     in_cur.execute(
         """--sql
-        SELECT stands.identifier, COUNT(*)
-        FROM stands INNER JOIN trees
-        ON stands.identifier = trees.stand AND
-        stands.node = trees.node
-        GROUP BY stands.identifier;
+        SELECT stand, COUNT(*)
+        FROM trees
+        GROUP BY stand
         """
     )
     row_counts: dict[str, int] = dict(in_cur)
