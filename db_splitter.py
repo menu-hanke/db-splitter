@@ -8,7 +8,7 @@ import sqlite3
 import prtpy
 
 
-def partition_db(in_db: sqlite3.Connection, output_db_count: int):
+def partition_db(in_db: sqlite3.Connection, output_db_count: int, outdir: str):
     """Partition given database to output_db_count smaller databases.
 
     Args:
@@ -25,8 +25,10 @@ def partition_db(in_db: sqlite3.Connection, output_db_count: int):
         """
     ).fetchall()
 
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
     for i in range(1, output_db_count + 1):
-        with sqlite3.connect(f"out_{i}.db") as out_db:
+        with sqlite3.connect(f"{outdir}/out_{i}.db") as out_db:
             out_cur = out_db.cursor()
             for table_def in table_defs:
                 out_cur.execute(table_def[0])
@@ -56,7 +58,7 @@ def partition_db(in_db: sqlite3.Connection, output_db_count: int):
     for i, stands in enumerate(partitioning, 1):
         in_cur.execute(
             f"""--sql
-            ATTACH DATABASE 'out_{i}.db' as out_db;
+            ATTACH DATABASE '{outdir}/out_{i}.db' as out_db;
             """
         )
         for table_ in table_names:
@@ -82,11 +84,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('input_db', type=str)
     parser.add_argument('output_db_count', type=int)
+    parser.add_argument('-o', '--outdir', default='.', type=str)
     args = parser.parse_args()
 
     for j in range(1, args.output_db_count + 1):
-        if os.path.isfile(f"out_{j}.db"):
-            os.remove(f"out_{j}.db")
+        if os.path.isfile(f"{args.outdir}/out_{j}.db"):
+            os.remove(f"{args.outdir}/out_{j}.db")
 
     with sqlite3.connect(args.input_db) as in_db_:
-        partition_db(in_db_, args.output_db_count)
+        partition_db(in_db_, args.output_db_count, args.outdir)
