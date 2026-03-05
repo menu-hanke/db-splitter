@@ -5,7 +5,8 @@
 import argparse
 import os
 import sqlite3
-import prtpy
+from prtpy import partition
+from prtpy.partitioning.greedy import greedy
 
 
 def partition_db(in_db: sqlite3.Connection, output_db_count: int, outdir: str):
@@ -45,8 +46,8 @@ def partition_db(in_db: sqlite3.Connection, output_db_count: int, outdir: str):
     row_counts: dict[str, int] = dict(in_cur)
 
     # partition to output_db_count bins
-    partitioning: list[list[str]] = prtpy.partition(algorithm=prtpy.partitioning.greedy,
-                                                    numbins=output_db_count, items=row_counts)
+    partitioning: list[list[str]] = partition(
+        algorithm=greedy, numbins=output_db_count, items=row_counts)
 
     # write to output dbs
     table_names = in_cur.execute(
