@@ -51,6 +51,14 @@ def partition_db(in_db: sqlite3.Connection, output_db_count: int, outdir: str):
     partitioning: list[list[str]] = partition(
         algorithm=greedy, numbins=output_db_count, items=tree_row_counts)
 
+    for i, bin_ in enumerate(partitioning, 1):
+        print(f"out_{i}.db:")
+        if len(bin_) > 0:
+            for stand in bin_:
+                print(f"   {stand}")
+        else:
+            print("    -")
+
     # write to output dbs
     table_names = in_cur.execute(
         """--sql
