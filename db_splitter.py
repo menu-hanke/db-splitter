@@ -43,11 +43,22 @@ def partition_db(in_db: sqlite3.Connection, output_db_count: int, outdir: str):
         GROUP BY stand
         """
     )
-    row_counts: dict[str, int] = dict(in_cur)
+    tree_row_counts: dict[str, int] = dict(in_cur)
+
+    # also add stands with no tree rows
+    in_cur.execute(
+        """--sql
+        SELECT DISTINCT identifier
+        FROM stands
+        """
+    )
+    for stand_id in in_cur:
+        if stand_id[0] not in tree_row_counts:
+            tree_row_counts[stand_id[0]] = 0
 
     # partition to output_db_count bins
     partitioning: list[list[str]] = partition(
-        algorithm=greedy, numbins=output_db_count, items=row_counts)
+        algorithm=greedy, numbins=output_db_count, items=tree_row_counts)
 
     # write to output dbs
     table_names = in_cur.execute(
