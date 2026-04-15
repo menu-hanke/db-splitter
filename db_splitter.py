@@ -17,6 +17,27 @@ def partition_db(in_db: sqlite3.Connection, output_db_count: int, outdir: str):
         output_db_count (int): number of databases to split the results into
     """
 
+    # initialize output databases
+    _init_output_dbs(in_db, output_db_count, outdir)
+
+    # calculate number of tree rows for each stand
+    tree_row_counts = _count_tree_rows(in_db)
+
+    # partition to output_db_count bins
+    partitioning: list[list[str]] = partition(
+        algorithm=greedy, numbins=output_db_count, items=tree_row_counts)
+
+    # print partitioned stand lists
+    for i, bin_ in enumerate(partitioning, 1):
+        print(f"out_{i}.db:")
+        print(bin_)
+        print("")
+
+    # write to output dbs
+    _write_output_dbs(in_db, partitioning, outdir)
+
+
+def _init_output_dbs(in_db: sqlite3.Connection, output_db_count: int, outdir: str):
     in_cur = in_db.cursor()
 
     # initialize output databases
@@ -35,7 +56,9 @@ def partition_db(in_db: sqlite3.Connection, output_db_count: int, outdir: str):
                 out_cur.execute(table_def[0])
             out_db.commit()
 
-    # calculate number of tree rows for each stand
+
+def _count_tree_rows(in_db: sqlite3.Connection) -> dict[str, int]:
+    in_cur = in_db.cursor()
     in_cur.execute(
         """--sql
         SELECT stand, COUNT(*)
@@ -55,17 +78,11 @@ def partition_db(in_db: sqlite3.Connection, output_db_count: int, outdir: str):
     for stand_id in in_cur:
         if stand_id[0] not in tree_row_counts:
             tree_row_counts[stand_id[0]] = 0
+    return tree_row_counts
 
-    # partition to output_db_count bins
-    partitioning: list[list[str]] = partition(
-        algorithm=greedy, numbins=output_db_count, items=tree_row_counts)
 
-    for i, bin_ in enumerate(partitioning, 1):
-        print(f"out_{i}.db:")
-        print(bin_)
-        print("")
-
-    # write to output dbs
+def _write_output_dbs(in_db: sqlite3.Connection, partitioning: list[list[str]], outdir: str):
+    in_cur = in_db.cursor()
     table_names = in_cur.execute(
         """--sql
         SELECT name FROM sqlite_master WHERE type='table';
