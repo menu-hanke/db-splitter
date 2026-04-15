@@ -40,7 +40,6 @@ def partition_db(in_db: sqlite3.Connection, output_db_count: int, outdir: str):
 def _init_output_dbs(in_db: sqlite3.Connection, output_db_count: int, outdir: str):
     in_cur = in_db.cursor()
 
-    # initialize output databases
     table_defs = in_cur.execute(
         """--sql
         SELECT sql FROM sqlite_master WHERE type='table';                   
